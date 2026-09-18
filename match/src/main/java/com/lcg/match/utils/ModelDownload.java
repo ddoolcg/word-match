@@ -27,41 +27,52 @@ public final class ModelDownload {
      *
      * @param rootPath 存储目录的根路径
      * @param url      ZIP 文件的网络地址
-     * @throws IOException 下载失败、存储目录不可用或解压失败时抛出
+     * @return ZIP 文件的解压路径，下载失败、存储目录不可用或解压失败时返回 null
      */
-    public static String load(String rootPath, String url) throws IOException {
+    public static String load(String rootPath, String url) {
         String path = rootPath + "model";
-        File file = new File(rootPath + File.separator + "model.txt");
+        File file = new File(path + File.separator + "model.txt");
         if (file.exists()) return path;
         //
-        URL url1 = new URL(url);
-        HttpURLConnection connection = (HttpURLConnection) url1.openConnection();
-        connection.setConnectTimeout(15_000);
-        connection.setReadTimeout(30_000);
-        connection.setInstanceFollowRedirects(true);
-        // 获取响应码
-        int responseCode = connection.getResponseCode();
-        if (responseCode < HttpURLConnection.HTTP_OK
-                || responseCode >= HttpURLConnection.HTTP_MULT_CHOICE) {
-            throw new IOException("Unexpected HTTP response: " + responseCode);
+        HttpURLConnection connection = null;
+        InputStream inputStream = null;
+        ZipInputStream zipInputStream = null;
+        try {
+            URL url1 = new URL(url);
+            connection = (HttpURLConnection) url1.openConnection();
+            connection.setConnectTimeout(15_000);
+            connection.setReadTimeout(30_000);
+            connection.setInstanceFollowRedirects(true);
+            // 获取响应码
+            int responseCode = connection.getResponseCode();
+            if (responseCode < HttpURLConnection.HTTP_OK
+                    || responseCode >= HttpURLConnection.HTTP_MULT_CHOICE) {
+                throw new IOException("Unexpected HTTP response: " + responseCode);
+            }
+            // 获取输入流
+            inputStream = connection.getInputStream();
+            // 创建 ZipInputStream
+            zipInputStream = new ZipInputStream(inputStream);
+            // 解压 ZIP 文件
+            extract(zipInputStream, path);
+            return path;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            // Disconnect the connection
+            if (connection != null) connection.disconnect();
+            // Close the input stream
+            try {
+                if (inputStream != null) inputStream.close();
+            } catch (IOException ignored) {
+            }
+            // Close the zip input stream
+            try {
+                if (zipInputStream != null) zipInputStream.close();
+            } catch (IOException ignored) {
+            }
         }
-        // 获取输入流
-        InputStream inputStream = connection.getInputStream();
-        // 创建 ZipInputStream
-        ZipInputStream zipInputStream = new ZipInputStream(inputStream);
-        // 解压 ZIP 文件
-        extract(zipInputStream, path);
-        zipInputStream.close(); // Close the zip input stream
-        inputStream.close(); // Close the input stream
-        // 创建标记文件
-        // 标记文件用于判断 ZIP 文件是否已下载
-        // 创建标记文件
-        FileOutputStream stream = new FileOutputStream(file);
-        stream.write("ok".getBytes());
-        stream.close();
-        // 连接断开
-        connection.disconnect();
-        return path;
     }
 
     /**
@@ -70,11 +81,22 @@ public final class ModelDownload {
     private static void extract(ZipInputStream zipInputStream, String unzipFilePath)
             throws IOException {
         byte[] buffer = new byte[8 * 1024];
+        int ok = 0;
         // 遍历 ZIP 条目
         ZipEntry entry;
         while ((entry = zipInputStream.getNextEntry()) != null) {
+            String entryName = entry.getName();
+            if (entryName.startsWith("am/")) {
+                ok |= 0b0001;
+            } else if (entryName.startsWith("conf/")) {
+                ok |= 0b0010;
+            } else if (entryName.startsWith("graph/")) {
+                ok |= 0b0100;
+            } else if (entryName.startsWith("ivector/")) {
+                ok |= 0b1000;
+            }
             //构建压缩包中一个文件解压后保存的文件全路径
-            String entryFilePath = unzipFilePath + File.separator + entry.getName();
+            String entryFilePath = unzipFilePath + File.separator + entryName;
             File entryFile = new File(entryFilePath);
             if (entry.isDirectory()) {
                 entryFile.mkdirs();
@@ -91,5 +113,10 @@ public final class ModelDownload {
             // 关闭当前条目
             zipInputStream.closeEntry();
         }
+        if ((ok & 0b1111) != 0b1111) return;
+        // 创建标记文件
+        FileOutputStream stream = new FileOutputStream(unzipFilePath + File.separator + "model.txt");
+        stream.write("ok".getBytes());
+        stream.close();
     }
 }

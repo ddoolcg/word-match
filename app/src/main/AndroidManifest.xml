@@ -12,7 +12,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Speech">
         <activity
-            android:name=".MainActivity"
+            android:name="com.lcg.match.MainActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.Speech"

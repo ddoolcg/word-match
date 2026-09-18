@@ -285,7 +285,7 @@ public class Core {
         /**
          * 语音模型 ZIP 文件下载地址。
          */
-        private String modelUrl = "https://gitee.com/leicg/plus/raw/master/repo/model.zip";
+        private String modelUrl = "https://cdn.gh-proxy.org/https://github.com/ddoolcg/word-match/raw/refs/heads/master/model.zip";
         /**
          * 将单词转换为识别器 factor 的服务地址。
          */
@@ -339,9 +339,10 @@ public class Core {
          * @throws IOException 单词列表为空或资源初始化失败时抛出
          */
         public Core build() throws IOException {
-            if (words == null || words.isEmpty()) throw new IOException("words is empty");
-            String s = context.getCacheDir().getPath() + File.separator;
+            if (words == null || words.isEmpty()) throw new IOException("单词列表为空");
+            String s = context.getFilesDir().getPath() + File.separator;
             String path = ModelDownload.load(s, modelUrl);
+            if (path == null) throw new IOException("资源初始化失败");
             List<String> list = Factor.transform(factorUrl, words);
             return new Core(path, sampleRate, list);
         }

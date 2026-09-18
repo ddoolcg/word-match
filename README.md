@@ -1,6 +1,6 @@
 # match
 
-`match` 是一个 Android 语音匹配库。它从麦克风读取 PCM 音频，使用内置的原生识别器判断当前音频是否匹配指定单词，并把结果回调到 Android 主线程。
+`match` 是一个 Android 单词测评库。它从麦克风读取 PCM 音频，使用内置的原生识别器判断当前音频是否匹配指定单词，并把结果回调到 Android 主线程。
 
 库的公开入口是 `com.lcg.match.Core`。`Core.Builder` 负责准备语音模型和单词对应的 `factor`，`Core` 负责录音、匹配和生命周期管理。
 
@@ -16,40 +16,11 @@
 
 ### 作为工程模块依赖
 
-在宿主工程的 `settings.gradle` 中包含模块：
-
-```groovy
-include ':app'
-include ':match'
-```
-
-在应用模块的 `build.gradle` 中添加：
+在应用模块的 `build.gradle` 中添加依赖：
 
 ```groovy
 dependencies {
-    implementation project(':match')
-}
-```
-
-### 使用已发布的 Maven/AAR
-
-本仓库的发布配置会把 AAR 发布到根目录的 `repo` 仓库。将 `repo` 复制到宿主工程后，在 `settings.gradle` 的 `dependencyResolutionManagement` 中添加仓库：
-
-```groovy
-dependencyResolutionManagement {
-    repositories {
-        google()
-        mavenCentral()
-        maven { url = uri("$rootDir/repo") }
-    }
-}
-```
-
-然后在应用模块的 `build.gradle` 中添加依赖：
-
-```groovy
-dependencies {
-    implementation 'io.github.ddoolcg:match:1.0'
+    implementation 'io.github.ddoolcg:match:1.1'
 }
 ```
 

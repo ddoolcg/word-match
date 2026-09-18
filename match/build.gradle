@@ -1,7 +1,8 @@
+import com.vanniktech.maven.publish.AndroidSingleVariantLibrary
+
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.maven.publish)
-    id 'signing'
 }
 
 android {
@@ -21,68 +22,59 @@ android {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
     }
-
-    publishing {
-        singleVariant('release') {
-            withSourcesJar()
-            withJavadocJar()
-        }
-    }
 }
 
 dependencies {
     api 'net.java.dev.jna:jna:5.19.1@aar'
 }
 
-publishing {
-    // Keep the local repository for offline consumers and bundle inspection.
-    repositories { RepositoryHandler handler ->
-        handler.maven {
-            url "${rootDir}/repo"
-        }
-    }
+mavenPublishing {
+    // The plugin reads these properties lazily through providers.gradleProperty:
+    // mavenCentralUsername and mavenCentralPassword.
+    publishToMavenCentral()
+    signAllPublications()
 
-    publications { PublicationContainer publication ->
-        maven(MavenPublication) {
-            afterEvaluate { from components.release }
-            groupId = "io.github.ddoolcg"
-            artifactId = "match"
-            version = "1.0"
+    configure(new AndroidSingleVariantLibrary('release', true, true))
+    coordinates('io.github.ddoolcg', 'match', '1.1')
 
-            pom {
-                name = "match"
-                description = "Android voice matching library with native speech recognition."
-                url = "https://github.com/ddoolcg/Speech"
-                licenses {
-                    license {
-                        name = "The Apache Software License, Version 2.0"
-                        url = "https://www.apache.org/licenses/LICENSE-2.0.txt"
-                        distribution = "repo"
-                    }
-                }
-                developers {
-                    developer {
-                        id = "ddoolcg"
-                        name = "Lei Chuguang"
-                        email = "475825657@qq.com"
-                    }
-                }
-                scm {
-                    connection = "scm:git:https://github.com/ddoolcg/Speech.git"
-                    developerConnection = "scm:git:ssh://git@github.com/ddoolcg/Speech.git"
-                    url = "https://github.com/ddoolcg/Speech"
-                }
+    pom {
+        name = 'match'
+        description = '英语单词语音匹配库'
+        url = 'https://github.com/ddoolcg/word-match'
+        licenses {
+            license {
+                name = 'The Apache Software License, Version 2.0'
+                url = 'https://www.apache.org/licenses/LICENSE-2.0.txt'
+                distribution = 'repo'
             }
+        }
+        developers {
+            developer {
+                id = 'ddoolcg'
+                name = '雷楚光'
+                email = '475825657@qq.com'
+            }
+        }
+        scm {
+            connection = 'scm:git:https://github.com/ddoolcg/word-match.git'
+            developerConnection = 'scm:git:ssh://git@github.com/ddoolcg/word-match.git'
+            url = 'https://github.com/ddoolcg/word-match'
         }
     }
 }
 
-signing {
-    def secretKeyFile = providers.gradleProperty('signing.secretKeyFile')
-            .map { file(it) }
-            .orElse(file("${System.getProperty('user.home')}/.gnupg-maven/maven-secret-key.asc"))
-    if (secretKeyFile.get().isFile()) {
-        useInMemoryPgpKeys(secretKeyFile.get().getText('UTF-8'), '')
+// Reuse the existing exported key file when signingInMemoryKey is not set.
+// This keeps the private key out of gradle.properties while providing the
+// same signing configuration expected by the Maven Central plugin.
+def signingSecretKeyFile = providers.gradleProperty('signing.secretKeyFile')
+        .map { file(it) }
+def signingKeyPassword = providers.gradleProperty('signingInMemoryKeyPassword').orElse('')
+
+if (signingSecretKeyFile.isPresent() && signingSecretKeyFile.get().isFile()) {
+    signing {
+        useInMemoryPgpKeys(
+                signingSecretKeyFile.get().getText('UTF-8'),
+                signingKeyPassword.get()
+        )
     }
-    sign publishing.publications.maven
 }
