@@ -1,7 +1,6 @@
 package com.lcg.match.utils;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -24,7 +23,7 @@ public final class Factor {
     private Factor() {
     }
 
-    public static List<String> transform(String url, List<String> words) throws IOException {
+    public static List<String> transform(String url, List<String> words) throws Exception {
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
         connection.setRequestMethod("POST");
         connection.setConnectTimeout(15_000);
@@ -51,15 +50,10 @@ public final class Factor {
                 throw new IOException("Factor API returned HTTP " + responseCode + ": " + responseText);
             }
 
-            JSONArray response;
             List<String> result = new ArrayList<>();
-            try {
-                response = new JSONArray(responseText);
-                for (int index = 0; index < response.length(); index++) {
-                    result.add(response.getString(index));
-                }
-            } catch (JSONException exception) {
-                throw new IOException("Factor API returned invalid JSON", exception);
+            JSONArray response = new JSONArray(responseText);
+            for (int index = 0; index < response.length(); index++) {
+                result.add(response.getString(index));
             }
             return result;
         } finally {
@@ -67,7 +61,7 @@ public final class Factor {
         }
     }
 
-    private static String readResponse(InputStream responseStream) throws IOException {
+    private static String readResponse(InputStream responseStream) throws Exception {
         if (responseStream == null) {
             return "";
         }

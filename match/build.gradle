@@ -35,7 +35,7 @@ mavenPublishing {
     signAllPublications()
 
     configure(new AndroidSingleVariantLibrary('release', true, true))
-    coordinates('io.github.ddoolcg', 'match', '1.1')
+    coordinates('io.github.ddoolcg', 'match', '1.2')
 
     pom {
         name = 'match'

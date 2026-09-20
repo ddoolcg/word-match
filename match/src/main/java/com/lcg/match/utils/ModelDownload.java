@@ -28,8 +28,9 @@ public final class ModelDownload {
      * @param rootPath 存储目录的根路径
      * @param url      ZIP 文件的网络地址
      * @return ZIP 文件的解压路径，下载失败、存储目录不可用或解压失败时返回 null
+     * @throws Exception 下载或解压过程中发生异常时抛出
      */
-    public static String load(String rootPath, String url) {
+    public static String load(String rootPath, String url) throws Exception {
         String path = rootPath + "model";
         File file = new File(path + File.separator + "model.txt");
         if (file.exists()) return path;
@@ -56,9 +57,6 @@ public final class ModelDownload {
             // 解压 ZIP 文件
             extract(zipInputStream, path);
             return path;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
         } finally {
             // Disconnect the connection
             if (connection != null) connection.disconnect();
@@ -79,7 +77,7 @@ public final class ModelDownload {
      * 逐个解压 ZIP 条目，并校验目标路径，防止条目写出目标目录。
      */
     private static void extract(ZipInputStream zipInputStream, String unzipFilePath)
-            throws IOException {
+            throws Exception {
         byte[] buffer = new byte[8 * 1024];
         int ok = 0;
         // 遍历 ZIP 条目

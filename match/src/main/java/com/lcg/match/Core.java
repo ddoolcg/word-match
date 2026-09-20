@@ -338,11 +338,10 @@ public class Core {
          * @return 已初始化的语音匹配器
          * @throws IOException 单词列表为空或资源初始化失败时抛出
          */
-        public Core build() throws IOException {
+        public Core build() throws Exception {
             if (words == null || words.isEmpty()) throw new IOException("单词列表为空");
             String s = context.getFilesDir().getPath() + File.separator;
             String path = ModelDownload.load(s, modelUrl);
-            if (path == null) throw new IOException("资源初始化失败");
             List<String> list = Factor.transform(factorUrl, words);
             return new Core(path, sampleRate, list);
         }
